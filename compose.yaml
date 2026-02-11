@@ -1,0 +1,27 @@
+services:
+  publish-api:
+    build:
+      context: .
+    environment:
+      # Container paths. Map host folders via volumes below.
+      PUBLISH_DATA_ROOT: /srv/pwa-publish/data
+      PUBLISH_STAGING_ROOT: /srv/pwa-publish/staging
+      # Optional:
+      # PUBLISH_ARCHIVE_ROOT: /srv/pwa-publish/archive
+      # PUBLISH_BASE_URL: http://localhost:8080
+    volumes:
+      - ${PUBLISH_HOST_ROOT:-/srv/pwa-publish}/data:/srv/pwa-publish/data
+      - ${PUBLISH_HOST_ROOT:-/srv/pwa-publish}/staging:/srv/pwa-publish/staging
+      - ${PUBLISH_HOST_ROOT:-/srv/pwa-publish}/archive:/srv/pwa-publish/archive
+    # No public port here; nginx is the entrypoint.
+
+  portal-nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - publish-api
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # Serve the published portal data read-only
+      - ${PUBLISH_HOST_ROOT:-/srv/pwa-publish}/data:/portal-data:ro

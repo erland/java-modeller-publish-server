@@ -1,5 +1,8 @@
 package se.erland.pwamodeller.publishing.service;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 import se.erland.pwamodeller.publishing.api.PublishingException;
 import se.erland.pwamodeller.publishing.config.PublishConfig;
 import se.erland.pwamodeller.publishing.fs.FileOps;
@@ -24,10 +27,12 @@ import java.util.zip.ZipInputStream;
  *
  * Does NOT publish to DATA_ROOT.
  */
+@ApplicationScoped
 public class ZipValidator {
 
     private final PublishConfig config;
 
+    @Inject
     public ZipValidator(PublishConfig config) {
         this.config = config;
     }

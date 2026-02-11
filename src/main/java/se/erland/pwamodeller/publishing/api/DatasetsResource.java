@@ -4,6 +4,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.ws.rs.GET;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
@@ -20,11 +21,14 @@ import java.util.Map;
 @jakarta.ws.rs.Path("/datasets")
 public class DatasetsResource {
 
+    @Inject
+    PublishConfig cfg;
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Object> listDatasets() {
-        PublishConfig cfg = PublishConfig.loadFromEnvOrSystem();
-        Path datasetsRoot = cfg.getDataRoot().toAbsolutePath().normalize().resolve("datasets");
+        PublishConfig effectiveCfg = (cfg != null) ? cfg : PublishConfig.loadFromEnvOrSystem();
+        Path datasetsRoot = effectiveCfg.getDataRoot().toAbsolutePath().normalize().resolve("datasets");
 
         List<DatasetInfo> out = new ArrayList<>();
 

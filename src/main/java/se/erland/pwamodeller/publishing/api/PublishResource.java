@@ -8,8 +8,11 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.resteasy.plugins.providers.multipart.InputPart;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import jakarta.inject.Inject;
+
+import org.jboss.resteasy.reactive.MultipartForm;
+import org.jboss.resteasy.reactive.RestForm;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 import se.erland.pwamodeller.publishing.config.PublishConfig;
 import se.erland.pwamodeller.publishing.service.PublishResult;
@@ -18,7 +21,7 @@ import se.erland.pwamodeller.publishing.service.ValidatedBundle;
 import se.erland.pwamodeller.publishing.service.ZipValidator;
 
 import java.io.InputStream;
-import java.util.List;
+import java.nio.file.Files;
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,59 +34,68 @@ import java.util.Optional;
 @Path("/datasets/{datasetId}/publish")
 public class PublishResource {
 
+    @Inject
+    PublishConfig cfg;
+
+    @Inject
+    ZipValidator validator;
+
+    @Inject
+    PublisherService publisher;
+
+    /**
+     * Quarkus / RESTEasy Reactive multipart form.
+     *
+     * Field names must match the multipart keys used by the client:
+     * - bundleZip (file)
+     * - title (text, optional)
+     */
+    public static class PublishForm {
+        @RestForm("bundleZip")
+        public FileUpload bundleZip;
+
+        @RestForm("title")
+        public String title;
+    }
+
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response publishZip(@PathParam("datasetId") String datasetId, MultipartFormDataInput input) {
-        Map<String, List<InputPart>> parts = input.getFormDataMap();
-        List<InputPart> zipParts = parts.get("bundleZip");
-
-        if (zipParts == null || zipParts.isEmpty()) {
+    public Response publishZip(@PathParam("datasetId") String datasetId, @MultipartForm PublishForm form) {
+        if (form == null || form.bundleZip == null) {
             throw PublishingException.validation("Missing multipart field 'bundleZip'");
         }
-        if (zipParts.size() > 1) {
-            throw PublishingException.validation("Multiple 'bundleZip' parts provided; expected 1");
-        }
 
-        Optional<String> title = readOptionalText(parts, "title");
+        Optional<String> title = Optional.ofNullable(form.title)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty());
 
         try {
-            InputStream is = zipParts.get(0).getBody(InputStream.class, null);
+            // RESTEasy Reactive stores uploads on disk; stream from the uploaded file path.
+            try (InputStream is = Files.newInputStream(form.bundleZip.uploadedFile())) {
 
-            PublishConfig cfg = PublishConfig.loadFromEnvOrSystem();
-            ZipValidator validator = new ZipValidator(cfg);
-            ValidatedBundle vb = validator.validateToStaging(datasetId, is);
+                PublishConfig effectiveCfg = (cfg != null) ? cfg : PublishConfig.loadFromEnvOrSystem();
+                ZipValidator effectiveValidator = (validator != null) ? validator : new ZipValidator(effectiveCfg);
+                PublisherService effectivePublisher = (publisher != null) ? publisher : new PublisherService(effectiveCfg);
 
-            PublisherService publisher = new PublisherService(cfg);
-            PublishResult result = publisher.publish(datasetId, vb, title);
+                ValidatedBundle vb = effectiveValidator.validateToStaging(datasetId, is);
+                PublishResult result = effectivePublisher.publish(datasetId, vb, title);
 
-            return Response.status(201).entity(Map.of(
-                    "datasetId", result.datasetId(),
-                    "bundleId", result.bundleId(),
-                    "publishedAt", result.publishedAt(),
-                    "urls", Map.of(
-                            "latest", result.latestUrl().map(Object::toString).orElse(null),
-                            "manifest", result.manifestUrl().map(Object::toString).orElse(null)
-                    )
-            )).build();
+                return Response.status(201).entity(Map.of(
+                        "datasetId", result.datasetId(),
+                        "bundleId", result.bundleId(),
+                        "publishedAt", result.publishedAt(),
+                        "urls", Map.of(
+                                "latest", result.latestUrl().map(Object::toString).orElse(null),
+                                "manifest", result.manifestUrl().map(Object::toString).orElse(null)
+                        )
+                )).build();
+            }
 
         } catch (PublishingException pe) {
             throw pe;
         } catch (Exception e) {
             throw new PublishingException(500, "Failed to read multipart upload", e);
-        }
-    }
-
-    private static Optional<String> readOptionalText(Map<String, List<InputPart>> parts, String field) {
-        try {
-            List<InputPart> ps = parts.get(field);
-            if (ps == null || ps.isEmpty()) return Optional.empty();
-            String v = ps.get(0).getBodyAsString();
-            if (v == null) return Optional.empty();
-            String t = v.trim();
-            return t.isEmpty() ? Optional.empty() : Optional.of(t);
-        } catch (Exception e) {
-            return Optional.empty();
         }
     }
 }

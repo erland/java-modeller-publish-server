@@ -1,5 +1,7 @@
 package se.erland.pwamodeller.publishing.config;
 
+import jakarta.enterprise.context.ApplicationScoped;
+
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -8,6 +10,7 @@ import java.util.Optional;
  * Reads publishing server configuration from system properties or environment variables.
  * Precedence: System property wins over env var.
  */
+@ApplicationScoped
 public class PublishConfig {
     public static final long DEFAULT_MAX_ZIP_BYTES = 100L * 1024L * 1024L;   // 100 MB
     public static final long DEFAULT_MAX_JSON_BYTES = 50L * 1024L * 1024L;   // 50 MB
@@ -18,6 +21,20 @@ public class PublishConfig {
     private final long maxZipBytes;
     private final long maxJsonBytes;
     private final Optional<URI> baseUrl;
+    /**
+     * Quarkus CDI constructor.
+     * Keeps the existing env/system-property behavior (Option A in the plan).
+     */
+    public PublishConfig() {
+        PublishConfig cfg = loadFromEnvOrSystem();
+        this.dataRoot = cfg.dataRoot;
+        this.stagingRoot = cfg.stagingRoot;
+        this.archiveRoot = cfg.archiveRoot;
+        this.maxZipBytes = cfg.maxZipBytes;
+        this.maxJsonBytes = cfg.maxJsonBytes;
+        this.baseUrl = cfg.baseUrl;
+    }
+
 
 
     // Visible for tests and for future DI/wiring.

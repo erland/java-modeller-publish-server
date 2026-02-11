@@ -1,5 +1,8 @@
 package se.erland.pwamodeller.publishing.service;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
@@ -24,10 +27,12 @@ import java.util.Optional;
  * - Best-effort rollback: if latest write fails, remove new bundle dir.
  * - Optional ZIP archiving.
  */
+@ApplicationScoped
 public class PublisherService {
 
     private final PublishConfig config;
 
+    @Inject
     public PublisherService(PublishConfig config) {
         this.config = config;
     }

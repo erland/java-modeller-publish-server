@@ -6,48 +6,69 @@
   <groupId>se.erland</groupId>
   <artifactId>java-modeller-publish-server</artifactId>
   <version>0.1.0-SNAPSHOT</version>
-  <packaging>war</packaging>
+  <packaging>jar</packaging>
 
   <name>java-modeller-publish-server</name>
 
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jakartaee.version>10.0.0</jakartaee.version>
-    <junit.jupiter.version>5.10.3</junit.jupiter.version>
-      <resteasy.version>6.2.10.Final</resteasy.version>
-      <parsson.version>1.1.7</parsson.version>
+
+    <!-- Quarkus platform (LTS line) -->
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+    <quarkus.platform.version>3.8.6.1</quarkus.platform.version>
+    <!-- Extra libs used by current implementation -->
+<parsson.version>1.1.7</parsson.version>
   </properties>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>${quarkus.platform.artifact-id}</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
-    <!-- Provided by JBoss EAP 8 (Jakarta EE 10) -->
+    <!-- Quarkus runtime -->
     <dependency>
-      <groupId>jakarta.platform</groupId>
-      <artifactId>jakarta.jakartaee-api</artifactId>
-      <version>${jakartaee.version}</version>
-      <scope>provided</scope>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-resteasy-reactive</artifactId>
     </dependency>
-
-    <!-- Test -->
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>${junit.jupiter.version}</version>
-      <scope>test</scope>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-resteasy-reactive-jackson</artifactId>
     </dependency>
-
+    <!-- Multipart support for RESTEasy Reactive is built-in; no separate extension needed -->
     <dependency>
-      <groupId>org.jboss.resteasy</groupId>
-      <artifactId>resteasy-multipart-provider</artifactId>
-      <version>${resteasy.version}</version>
-      <scope>provided</scope>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
     </dependency>
-
-    <!-- JSON-P provider for unit tests (JBoss provides at runtime) -->
+<!-- JSON-P (used by JsonWellFormedValidator) -->
+    <dependency>
+      <groupId>jakarta.json</groupId>
+      <artifactId>jakarta.json-api</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.eclipse.parsson</groupId>
       <artifactId>parsson</artifactId>
       <version>${parsson.version}</version>
+    </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.rest-assured</groupId>
+      <artifactId>rest-assured</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -55,19 +76,26 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>quarkus-maven-plugin</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <extensions>true</extensions>
+        <executions>
+          <execution>
+            <goals>
+              <goal>build</goal>
+              <goal>generate-code</goal>
+              <goal>generate-code-tests</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.3.1</version>
         <configuration>
           <useModulePath>false</useModulePath>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-        <version>3.4.0</version>
-        <configuration>
-          <failOnMissingWebXml>false</failOnMissingWebXml>
         </configuration>
       </plugin>
     </plugins>
