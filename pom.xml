@@ -4,11 +4,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>se.erland</groupId>
-  <artifactId>pwa-modeller-publish-server</artifactId>
+  <artifactId>java-modeller-publish-server</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>war</packaging>
 
-  <name>pwa-modeller-publish-server</name>
+  <name>java-modeller-publish-server</name>
 
   <properties>
     <maven.compiler.release>17</maven.compiler.release>

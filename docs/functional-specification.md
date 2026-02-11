@@ -1,4 +1,4 @@
-# pwa-modeller-publish-server — Functional specification
+# java-modeller-publish-server — Functional specification
 
 ## Purpose
 
@@ -6,7 +6,7 @@ Provide a small **Publishing Server** that receives a **publish bundle ZIP** pro
 
 - **Runtime:** JBoss EAP 8
 - **Build:** Java + Maven → WAR
-- **Repository:** `pwa-modeller-publish-server`
+- **Repository:** `java-modeller-publish-server`
 - **Primary goals:** correctness, atomic publishing, auditability, simple operations.
 - **Out of scope (initial):** SSO integration details, fine-grained ACL UI, background processing.
 

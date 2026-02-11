@@ -1,4 +1,4 @@
-# pwa-modeller-publish-server — Development plan
+# java-modeller-publish-server — Development plan
 
 ## Working rules for LLM-friendly steps
 - Each step is implementable in **one prompt**.

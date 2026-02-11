@@ -1,4 +1,4 @@
-# pwa-modeller-publish-server
+# java-modeller-publish-server
 
 Publishing server for EA Modeller PWA bundles.
 
