@@ -21,6 +21,11 @@ docker compose up --build
 - API: `http://localhost:8080/api/health`
 - Static data: `http://localhost:8080/portal-data/`
 
+
+### nginx CORS
+
+When using the nginx sidecar, CORS for `/api/*` is controlled by `CORS_ORIGIN_REGEX` on the `portal-nginx` service (see `nginx/default.conf.template`).
+
 ## Configuration
 
 Environment variables or system properties:

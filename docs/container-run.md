@@ -41,3 +41,18 @@ These are read by the server (system property wins over env var):
 - `PUBLISH_BASE_URL` (optional) e.g. `http://localhost:8080`
 
 In `compose.yaml`, these are set to container paths under `/srv/pwa-publish/...`.
+
+## nginx CORS
+
+When running the nginx sidecar, CORS for `/api/*` is handled by nginx and is configurable via `CORS_ORIGIN_REGEX`.
+
+Default allows:
+
+- `http://localhost`
+- `http://localhost:5173`
+
+Override example (allow another machine):
+
+```bash
+CORS_ORIGIN_REGEX='^http://(localhost(:5173)?|192\.168\.1\.50(:5173)?)$' docker compose up --build
+```

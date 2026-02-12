@@ -1,0 +1,62 @@
+server
+{
+  listen 80;
+  server_name _;
+
+  # Allow larger publish bundles
+  client_max_body_size 200m;
+
+  # Static portal data (published bundles, datasets, etc.)
+  location /portal-data/ {
+    alias /portal-data/;
+    autoindex off;
+    try_files $uri =404;
+    add_header Cache-Control "no-store";
+  }
+
+  # API proxy + CORS (origins configurable via env)
+  location /api/ {
+
+    # Allowlist CORS origins by regex. The Origin header never includes the path.
+    # Examples:
+    #   http://localhost
+    #   http://localhost:5173
+    # Configure via CORS_ORIGIN_REGEX, e.g.:
+    #   ^http://localhost(:5173)?$
+    set $cors_origin "";
+    if ($http_origin ~* ${CORS_ORIGIN_REGEX}) { set $cors_origin $http_origin; }
+
+    # CORS preflight
+    if ($request_method = OPTIONS) {
+      if ($cors_origin = "") { return 403; }
+      add_header 'Access-Control-Allow-Origin' $cors_origin always;
+      add_header 'Access-Control-Allow-Methods' 'GET,POST,PUT,PATCH,DELETE,OPTIONS' always;
+      add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization, X-Request-Id, X-Requested-With' always;
+      add_header 'Access-Control-Max-Age' 86400 always;
+      add_header 'Vary' 'Origin' always;
+      return 204;
+    }
+
+    # CORS for actual requests (only when Origin is allowed)
+    if ($cors_origin != "") {
+      add_header 'Access-Control-Allow-Origin' $cors_origin always;
+      add_header 'Vary' 'Origin' always;
+    }
+
+    # Preserve the full /api/* path when proxying.
+    # Quarkus is configured with quarkus.http.root-path=/api, so we must NOT
+    # strip the /api prefix here (avoid trailing slash in proxy_pass).
+    proxy_pass http://publish-api:8080;
+    proxy_http_version 1.1;
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # Optional root landing
+  location / {
+    return 302 /portal-data/;
+  }
+}

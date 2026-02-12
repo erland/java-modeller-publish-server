@@ -11,9 +11,18 @@
   - Example: `/portal-data/datasets/<datasetId>/latest.json`
 - `/api/...` -> proxied to `publish-api` (Quarkus)
 
-Config file: `nginx/default.conf`.
+Config template: `nginx/default.conf.template` (rendered at container start via envsubst).
 
 ## Why this setup
 
 - Keeps Quarkus focused on the publish API and atomic filesystem operations
 - Lets nginx handle static caching/headers and future TLS termination
+
+
+## CORS configuration
+
+Allowed CORS origins for `/api/*` are configured via the `CORS_ORIGIN_REGEX` environment variable on the `portal-nginx` service.
+
+Example default:
+
+- `^http://localhost(:5173)?$` (allows `http://localhost` and `http://localhost:5173`)
