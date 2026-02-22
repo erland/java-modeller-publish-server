@@ -1,9 +1,9 @@
-name: Release Image
+name: Snapshot Image
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   build-and-push:
@@ -14,6 +14,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Compute short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -36,5 +39,5 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:snapshot
+            ghcr.io/${{ github.repository }}:sha-${{ env.SHORT_SHA }}
