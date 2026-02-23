@@ -62,3 +62,7 @@ Images will be published as:
 
 - `ghcr.io/<owner>/<repo>:v0.2.0`
 - `ghcr.io/<owner>/<repo>:latest`
+
+## License
+
+Licensed under the MIT License. See `LICENSE` and `THIRD_PARTY_NOTICES.md`.
